@@ -1,46 +1,46 @@
 body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f4f4f4;
-    text-align: center;
-  }
-  
-  .search-box {
-    margin: 20px;
-  }
-  
-  input {
-    padding: 8px;
-    width: 300px;
-    font-size: 16px;
-  }
-  
-  button {
-    padding: 8px 12px;
-    margin-left: 10px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  .product-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 20px;
-  }
-  
-  .product {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: white;
-    margin: 10px;
-    padding: 10px;
-    width: 200px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-  }
-  .product img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 5px;
-  }
-  
+  font-family: Arial;
+  padding: 20px;
+  background: #f0f2f5;
+  text-align: center;
+}
+
+input {
+  padding: 8px;
+  width: 300px;
+}
+
+button {
+  padding: 8px 16px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  padding: 10px;
+  width: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card img {
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+}
+
+.card a {
+  display: inline-block;
+  margin-top: 10px;
+  color: blue;
+  text-decoration: none;
+}
