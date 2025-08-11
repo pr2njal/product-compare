@@ -5,6 +5,7 @@ import undetected_chromedriver as uc
 
 def scrape_amazon(query):
     options = uc.ChromeOptions()
+    # Comment this line during debugging (to open browser)
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -12,35 +13,36 @@ def scrape_amazon(query):
 
     driver = uc.Chrome(options=options)
     url = f"https://www.amazon.in/s?k={query.replace(' ', '+')}"
+    print(f"[INFO] Opening URL: {url}")
     driver.get(url)
-    time.sleep(5)
 
+    time.sleep(5)  # Wait for JS to render
+
+    # Scroll to bottom
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(3)
 
-    soup = BeautifulSoup(driver.page_source, "html.parser")
+    html_content = driver.page_source
+
+    # Save HTML for debugging
+    with open("amazon_debug.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    soup = BeautifulSoup(html_content, "html.parser")
     driver.quit()
 
     results = soup.select(".s-result-item[data-component-type='s-search-result']")
-    print(f"[DEBUG] Found {len(results)} result containers for query: {query}\n")
+    print(f"[DEBUG] Found {len(results)} result containers for query: {query}")
 
     products = []
+
     for item in results:
         try:
-            # Primary and fallback selectors for title and link
             title_tag = item.select_one("h2 span.a-text-normal") or item.select_one("h2 span")
             link_tag = item.select_one("a.a-link-normal.s-no-outline") or item.select_one("a.a-link-normal.a-text-normal")
             price_whole = item.select_one("span.a-price-whole")
             price_fraction = item.select_one("span.a-price-fraction")
             image_tag = item.select_one("img.s-image")
-
-            # Debug output
-            print("------------")
-            print("TITLE:", title_tag.get_text(strip=True) if title_tag else "None")
-            print("LINK:", link_tag['href'] if link_tag else "None")
-            print("PRICE WHOLE:", price_whole.get_text(strip=True) if price_whole else "None")
-            print("PRICE FRACTION:", price_fraction.get_text(strip=True) if price_fraction else "None")
-            print("IMAGE:", image_tag['src'] if image_tag else "None")
 
             if title_tag and link_tag and price_whole and image_tag:
                 title = title_tag.get_text(strip=True)
@@ -55,7 +57,7 @@ def scrape_amazon(query):
                     "link": link,
                     "price": price,
                     "image": image,
-                     "source": "amazon"
+                    "source": "amazon"
                 })
         except Exception as e:
             print(f"[WARN] Skipping item due to error: {e}")
