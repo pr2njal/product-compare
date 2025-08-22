@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from scraper import scrape_snapdeal
+from scraper import scrape_myntra
+from scraper import scrape_ajio
 from models import db, Product
 from sqlalchemy import true
 import os
@@ -73,7 +75,7 @@ def search():
     normalized_query = normalize_search_term(query)
     base_keyword = extract_base_keyword(normalized_query)
 
-    # Step 1: Find products for base keyword
+    # Step 1: Find products for base keyword from DB
     base_results = Product.query.filter_by(search_keyword=base_keyword).all()
     source_filtered = [p for p in base_results if (p.source == source or source == "all")]
 
@@ -83,8 +85,9 @@ def search():
         filtered_products = []
         for product in source_filtered:
             title_lower = product.title.lower()
-            if all(word in title_lower for word in query_words):
-                filtered_products.append(product)
+            if all(word in title_lower for word in query_words) or product.search_keyword == base_keyword:
+                   filtered_products.append(product)
+
 
         if filtered_products:
             print(f"[INFO] Returning {len(filtered_products)} filtered products from DB for query '{query}'")
@@ -100,16 +103,45 @@ def search():
             product_list = sort_products(product_list, sort_option)
             return jsonify(product_list)
 
-    # Step 3: If no filtered results, scrape as usual
+    # Step 3: If no filtered results, scrape from sources
     print(f"[INFO] No filtered results found, scraping for '{query}'")
     scraped_results = []
-    try:
-        scraped_results = scrape_snapdeal(query)
-        print(f"[DEBUG] Scraped {len(scraped_results)} products.")
-    except Exception as e:
-        print(f"[ERROR] Snapdeal scrape failed: {e}")
 
-    # Save scraped results with base_keyword
+    if source in ["all", "snapdeal"]:
+        try:
+            results = scrape_snapdeal(query)
+            print(f"[DEBUG] Snapdeal scraped {len(results)} products.")
+            scraped_results.extend(results)
+        except Exception as e:
+            print(f"[ERROR] Snapdeal scrape failed: {e}")
+
+    if source in ["all", "myntra"]:
+        try:
+            results = scrape_myntra( query)
+            print(f"[DEBUG] Myntra scraped {len(results)} products.")
+            scraped_results.extend(results)
+        except Exception as e:
+            print(f"[ERROR] Myntra scrape failed: {e}")
+            
+    if source in ["all", "ajio"]:   # 👈 add this block
+        try:
+            results = scrape_ajio(query)
+            print(f"[DEBUG] Ajio scraped {len(results)} products.")
+            scraped_results.extend(results)
+        except Exception as e:
+            print(f"[ERROR] Ajio scrape failed: {e}")        
+
+   
+    # Deduplicate by product link
+    unique_links = set()
+    unique_results = []
+    for item in scraped_results:
+        if item['link'] not in unique_links:
+            unique_links.add(item['link'])
+            unique_results.append(item)
+    scraped_results = unique_results
+
+    # Save scraped results with base_keyword in DB
     try:
         for item in scraped_results:
             existing = Product.query.filter_by(title=item["title"], link=item["link"]).first()
